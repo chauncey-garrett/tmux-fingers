@@ -1,3 +1,169 @@
+## 2.7.1 - 09 Jun 2026
+
+* fix parsing of @fingers-enabled-builtin-patterns ( Fixes #176 )
+* update install-wizard and readme to show that shards is required
+* relax parsing of --patterns flag in cli
+
+## 2.7.0 - 31 May 2026
+
+* improved performance: ~30% faster
+* added macOS arm64 binary to the release/download pipeline
+* added kubernetes-pod builtin pattern for pod names
+* fixed clipboard integration in WSL
+* fixed various styling rendering issues related to submatches and backdrop
+* removed tput dependency
+* improved error handling
+* refactored option parsing, now with stricter validation
+* updated to crystal 1.19
+
+## 2.6.2 - 15 Feb 2026
+
+* Fix line jumping and backdrop-style rendering issues related with tabs,
+  double width characters, and zoomed panes.
+
+## 2.6.1 - 27 Jan 2026
+
+* Fix: close stdin before waiting for load-buffer command ( Fixes #157 )
+* handle tab characters properly by prefilling line ( Fixes #155 and #140 )
+* add SHELL variable to info command, and properly handle unset env vars
+* misc dev improvements
+
+## 2.6.0 - 05 Jan 2026
+
+* Added new @fingers-enable-bindings option ( Fixes #149 )
+* Fixed colors in tmux 3.6a
+* Fixed case where hint is longer than text to highlight ( Fixes #139 and #154 )
+
+## 2.5.1 - 04 Aug 2025
+
+* Use pane_current_path with presence when chdir ( thanks @na0x2c6 ! )
+
+## 2.5.0 - 17 Jul 2025
+
+* Added new @fingers-use-system-clipboard option ( thanks @purajit ! )
+
+## 2.4.1 - 18 May 2025
+
+* Fix active pane restore when passing a format as target.
+
+## 2.4.0 - 04 Apr 2025
+
+* Add support to tmux target-pane tokens, which allows to target other panes
+  rather than the active one like: adjacent panes, previous pane, etc... ( Fixes #138 )
+
+## 2.3.3 - 06 Feb 2025
+
+* Fix :paste: action again, this time for real. Working in copy mode and non-copy mode. ( Fixes #137 )
+
+## 2.3.2 - 02 Feb 2025
+
+* :paste: will now exit copy mode right before pasting.
+* Documentation improvements.
+* Properly handle single quotes in url pattern.
+
+## 2.3.1 - 10 Dec 2024
+
+* Fix :paste: action.
+
+## 2.3.0 - 09 Dec 2024
+
+* Added --(main|ctrl|alt|shift)-action cli options.
+* Add info command to show information.
+* Improved git-status builtin pattern
+* Fixed root key table not being properly restored ( Fixes #130 )
+* Updated to Crystal 1.14.
+* Various perfomance improvements (from 50ms to 40ms on my machine :tm:)
+* Improved benchmark and development scripts.
+
+## 2.2.2 - 14 Aug 2024
+
+* Fixed error in multi-user environments.
+* Added XDG dirs, logs are now in ~/.local/state/tmux-fingers/fingers.log instead of /tmp/fingers.log.
+* Action stderr is now logged to ~/.local/state/tmux-fingers/action-stderr
+
+## 2.2.1 - 29 Jul 2024
+
+* Tweaks to version detection logic ( Fixes #125 ).
+
+## 2.2.0 - 21 Jul 2024
+
+* Add new option @fingers-enabled-builtin-patterns ( Fixes #19 ).
+* New way of setting up tmux-fingers bindings, with command line option to allow using only specific patterns (built-in or custom) ( Fixes #117 )
+* Fix issue where zoom panes would be unzoomed when closing ( Fixes #123 ).
+* Open tmux-fingers in same path as target pane path ( Fixes #120 ).
+
+## 2.1.5 - 02 May 2024
+
+* User defined patterns now take precedence over built-in ones.
+* Fix blank screen under certain circumstances due to incorrect handling of capture groups.
+
+## 2.1.4 - 08 Mar 2024
+
+* Fixed "No last pane" error when using "tmux last-pane" ( Fixes #48 )
+
+## 2.1.3 - 31 Jan 2024
+
+* Fix "Too many matches" exception ( fixes #112 ).
+
+## 2.1.2 - 19 Jan 2024
+
+* Added termux support.
+* Fixes to Fingers::Dirs to remove hardcoded paths. Default log path is now /tmp/fingers.log.
+* Updated Crystal version to generate clean ELF executables.
+* Improve exception handling when rendering.
+
+## 2.1.1 - 16 Nov 2023
+
+* Fix copy/jump when using special named capture group "match".
+
+## 2.1.0 - 10 Nov 2023
+
+* Added new jump functionality.
+* Improved visual feedback by discarding unreachable highlights.
+
+## 2.0.6 - 26 Oct 2023
+
+* Added new option @fingers-show-copied-notification ( fixes #104 ).
+* Fix problem expanding paths in Mac OS ( thanks @brttbndr ! ).
+* Fix hints using disallowed characters like "q" ( fixes #105 ).
+* Improve performance in hint generation.
+
+## 2.0.5 - 06 Oct 2023
+
+* Fix git/binary version mismatch again ( fixes #103 ).
+
+## 2.0.4 - 05 Oct 2023
+
+* Fix issues when using backquote as tmux prefix ( fixes #102 ).
+
+## 2.0.3 - 29 Sep 2023
+
+* Fix git/binary version mismatch by publishing a new version ( fixes #101 ).
+
+## 2.0.2 - 28 Sep 2023
+
+* Fix `prefix2` being lost after exiting fingers mode ( fixes #100 ).
+
+## 2.0.1 - 27 Sep 2023
+
+* Fix brew installation method and display load-config errors.
+
+## 2.0.0 - 27 Sep 2023
+
+* Code rewritten in [Crystal language](https://crystal-lang.org/).
+* Greatly improved performance.
+* Switched regex syntax from ERE to PCRE.
+* Deprecated `@fingers-compact-hints` and all `@fingers-*-format-nocompact` format options.
+* Deprecated all `@fingers-*-format` options in favour of their `@fingers-*-style` counterparts.
+* Added new `@fingers-backdrop-style` option that allows you to customize all the background text that is not highlighted by the plugin. More info in `docs/migrating-from-1.md`.
+* Patterns can now define a named capture to only highlight a part of the match.
+* Added new built-in patterns.
+
+## 1.1.3 - 27 Sep 2023
+
+* Removed unused .cache folder creation ( fixes #98 )
+* Clarified regexp syntax in README ( thanks @ilyagr ! )
+
 ## 1.1.2 - 05 May 2023
 
 * Fix escaping issue with upcoming tmux 3.4 ( fixes #95 )

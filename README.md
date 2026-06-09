@@ -1,10 +1,6 @@
-# tmux-fingers
+![tmux-fingers](./logo.svg)
 
-[![Build Status](https://travis-ci.com/Morantron/tmux-fingers.svg?branch=develop)](https://travis-ci.com/Morantron/tmux-fingers)
-
-**tmux-fingers**: copy pasting with vimium/vimperator like hints.
-
-![yay](http://i.imgur.com/5bSrBew.gif)
+![demo](https://github.com/Morantron/tmux-fingers/assets/3304507/cafe8877-1c98-41b1-bb65-b72129fea701)
 
 # Usage
 
@@ -21,9 +17,9 @@ Here is a list of the stuff highlighted by default.
 * IP addresses
 * kubernetes resources
 * UUIDs
+* git status/diff output
 
-It also works on copy mode, but requires *tmux 2.2* or newer to properly take
-the scroll position into account.
+Checkout [list of built-in patterns](#fingers-enabled-builtin-patterns).
 
 ## Key shortcuts
 
@@ -34,16 +30,11 @@ While in **[fingers]** mode, you can use the following shortcuts:
 * <kbd>SHIFT</kbd> + <kbd>a</kbd>-<kbd>z</kbd>: copies selected match to the clipboard and triggers [@fingers-shift-action](#fingers-shift-action). By default it triggers `:paste:` action, which automatically pastes selected matches.
 * <kbd>ALT</kbd> + <kbd>a</kbd>-<kbd>z</kbd>: copies selected match to the clipboard and triggers [@fingers-alt-action](#fingers-alt-action). There is no default, configurable by the user.
 * <kbd>TAB</kbd>: toggle multi mode. First press enters multi mode, which allows to select multiple matches. Second press will exit with the selected matches copied to the clipboard.
-* <kbd>SPACE</kbd>: toggle compact hints ( see [@fingers-compact-hints](#fingers-compact-hints) ).
-* <kbd>CTRL</kbd> + <kbd>c</kbd>: exit **[fingers]** mode
-* <kbd>ESC</kbd>: exit help or **[fingers]** mode
-* <kbd>?</kbd>: show help.
+* <kbd>q</kbd>, <kbd>ESC</kbd> or <kbd>CTRL</kbd> + <kbd>c</kbd>: exit **[fingers]** mode
 
 # Requirements
 
-* tmux 2.1+ ( 2.8 recommended )
-* bash 4+
-* gawk
+* tmux 3.0 or newer
 
 # Installation
 
@@ -51,89 +42,112 @@ While in **[fingers]** mode, you can use the following shortcuts:
 
 Add the following to your list of TPM plugins in `.tmux.conf`:
 
-```
+```tmux
 set -g @plugin 'Morantron/tmux-fingers'
 ```
 
-Hit <kbd>prefix</kbd> + <kbd>I</kbd> to fetch and source the plugin. You should now be able to use
-the plugin!
+Hit <kbd>prefix</kbd> + <kbd>I</kbd> to fetch and source the plugin. The first time you run it you'll be presented with a wizard to complete the installation. Depending on the platform, the wizard will offer the following installation methods:
+
+- Building from source (requires [crystal](https://crystal-lang.org/install/)). _Available in all platforms_
+- Install through [brew](https://brew.sh). _macOS only_.
+- Download standalone binary. _Linux x86_64 and macOS arm64 only_.
 
 ## Manual
 
 Clone the repo:
 
 ```
-# Use --recursive flag to also fetch submodules
-➜ git clone --recursive https://github.com/Morantron/tmux-fingers ~/.tmux/plugins/tmux-fingers
+$ git clone https://github.com/Morantron/tmux-fingers ~/.tmux/plugins/tmux-fingers
 ```
 
 Source it in your `.tmux.conf`:
 
-```
+```tmux
 run-shell ~/.tmux/plugins/tmux-fingers/tmux-fingers.tmux
 ```
 
 Reload TMUX conf by running:
 
 ```
-➜ tmux source-file ~/.tmux.conf
+$ tmux source-file ~/.tmux.conf
 ```
+
+The first time you run it you'll be presented with a wizard to complete the installation.
 
 # Configuration
 
 NOTE: for changes to take effect, you'll need to source again your `.tmux.conf` file.
 
 * [@fingers-key](#fingers-key)
-* [@fingers-patterns-N](#fingers-patterns-N)
+* [@fingers-jump-key](#fingers-jump-key)
+* [@fingers-pattern-N](#fingers-pattern-n)
 * [@fingers-main-action](#fingers-main-action)
 * [@fingers-ctrl-action](#fingers-ctrl-action)
 * [@fingers-alt-action](#fingers-alt-action)
 * [@fingers-shift-action](#fingers-shift-action)
-* [@fingers-compact-hints](#fingers-compact-hints)
+* [@fingers-hint-style](#fingers-hint-style)
+* [@fingers-highlight-style](#fingers-highlight-style)
+* [@fingers-backdrop-style](#fingers-backdrop-style)
+* [@fingers-selected-hint-style](#fingers-selected-hint-style)
+* [@fingers-selected-highlight-style](#fingers-selected-highlight-style)
 * [@fingers-hint-position](#fingers-hint-position)
-* [@fingers-hint-position-nocompact](#fingers-hint-position-nocompact)
-* [@fingers-hint-format](#fingers-hint-format)
-* [@fingers-hint-format-nocompact](#fingers-hint-format-nocompact)
-* [@fingers-highlight-format](#fingers-highlight-format)
-* [@fingers-highlight-format-nocompact](#fingers-highlight-format-nocompact)
-* [@fingers-selected-hint-format](#fingers-selected-hint-format)
-* [@fingers-selected-hint-format-nocompact](#fingers-selected-hint-format-nocompact)
-* [@fingers-selected-highlight-format](#fingers-selected-highlight-format)
-* [@fingers-selected-highlight-format-nocompact](#fingers-selected-highlight-format-nocompact)
-* deprecated: [@fingers-copy-command](#fingers-copy-command)
-* deprecated: [@fingers-copy-command-uppercase](#fingers-copy-command-uppercase)
+* [@fingers-keyboard-layout](#fingers-keyboard-layout)
+* [@fingers-show-copied-notification](#fingers-show-copied-notification)
+* [@fingers-enabled-builtin-patterns](#fingers-enabled-builtin-patterns)
+* [@fingers-use-system-clipboard](#fingers-use-system-clipboard)
+* [@fingers-enable-bindings](#fingers-enable-bindings)
+
+Recipes:
+
+* [Start tmux-fingers without prefix](#start-tmux-fingers-without-prefix)
+* [Using only specific patterns](#using-only-specific-patterns)
+* [Using arbitrary commands](#using-arbitrary-commands)
+* [Target adjacent panes](#target-adjacent-panes)
 
 ## @fingers-key
 
 `default: F`
 
-Customize how to enter fingers mode. Always preceded by prefix: `prefix + @fingers-key`
+Customize how to enter fingers mode. Always preceded by prefix: `prefix + @fingers-key`.
 
 For example:
 
-```
+```tmux
 set -g @fingers-key F
 ```
 
-## @fingers-patterns-N
+## @fingers-jump-key
+
+`default: J`
+
+Customize how to enter fingers jump mode. Always preceded by prefix: `prefix + @fingers-jump-key`.
+
+In jump mode, the cursor will be placed in the position of the match after the hint is selected.
+
+## @fingers-pattern-N
 
 You can also add additional patterns if you want more stuff to be highlighted:
 
-```
+```tmux
+# You can define custom patterns like this
 set -g @fingers-pattern-0 'git rebase --(abort|continue)'
-set -g @fingers-pattern-1 'yolo'
-.
-.
-.
-set -g @fingers-pattern-50 'whatever'
+
+# Increment the number and define more patterns
+set -g @fingers-pattern-1 'some other pattern'
+
+# You can use a named capture group like this (?<match>YOUR-REGEX-HERE)
+# to only highlight and copy part of the match.
+set -g @fingers-pattern-2 'capture (?<match>only this)'
+
+# Watch out for backslashes! For example the regex \d{50} matches 50 digits.
+set -g @fingers-pattern-3 '\d{50}'  # No need to escape if you use single quotes
+set -g @fingers-pattern-4 "\\d{50}" # If you use double quotes, you'll need to escape backslashes for special characters to work
+set -g @fingers-pattern-5 \\d{50} # Escaping also needed if you don't use any quotes
 ```
 
-Patterns are case insensitive, and grep's extended syntax ( ERE ) should be used. Patterns
-matching the empty string are disallowed.
-`man grep` for more info.
+Patterns use [PCRE pattern syntax](https://www.pcre.org/original/doc/html/pcrepattern.html).
 
-If the introduced regexp contains an error, an error will be shown when
-invoking the plugin.
+If the introduced regex contains an error, an error will be shown when invoking the plugin.
 
 ## @fingers-main-action
 
@@ -143,7 +157,7 @@ By default **tmux-fingers** will copy matches in tmux and system clipboard.
 
 If you still want to set your own custom command you can do so like this:
 
-```
+```tmux
 set -g @fingers-main-action '<your command here>'
 ```
 This command will also receive the following:
@@ -164,13 +178,9 @@ You can also use the following special values:
 
 Same as [@fingers-main-action](#fingers-main-action) but only called when match is selected by holding <kbd>ctrl</kbd>
 
-This option requires `tmux 2.8` or higher.
-
 ## @fingers-alt-action
 
 Same as [@fingers-main-action](#fingers-main-action) but only called when match is selected by holding <kbd>alt</kbd>
-
-This option requires `tmux 2.8` or higher.
 
 ## @fingers-shift-action
 
@@ -178,42 +188,41 @@ This option requires `tmux 2.8` or higher.
 
 Same as [@fingers-main-action](#fingers-main-action) but only called when match is selected by holding <kbd>shift</kbd>
 
-## @fingers-copy-command
+## @fingers-hint-style
 
-_DEPRECATED: this option is deprecated, please use [@fingers-main-action](#fingers-main-action) instead_
+`default: "fg=green,bold"`
 
-## @fingers-copy-command-uppercase
+With this option you can define the styles for the letter hints.
 
-_DEPRECATED: this option is deprecated, please use [@fingers-shift-action](#fingers-shift-action) instead_
+You can customize the styles using the same syntax used in `.tmux.conf` for styling the status bar.
 
-## @fingers-compact-hints
+More info in the `STYLES` section of `man tmux`.
 
-`default: 1`
+Supported styles are: `bright`, `bold`, `dim`, `underscore`, `italics`.
 
-By default **tmux-fingers** will show hints in a compact format. For example:
+## @fingers-highlight-style
 
-<pre>
-/path/to/foo/bar/lol
+`default: "fg=yellow"`
 
-<i>with <bold>@fingers-compact-hints</bold> set to <bold>1</bold>:</i>
+Custom styles for the highlighted match. See [@fingers-hint-style](#fingers-hint-style) for more details.
 
-<strong>aw</strong>ath/to/foo/bar/lol
+## @fingers-backdrop-style
 
-<i>with <bold>@fingers-compact-hints</bold> set to <bold>0</bold>:</i>
+`default: ""`
 
-/path/to/foo/bar/lol <strong>[aw]</strong>
-</pre>
+Custom styles for all the text that is not matched. See [@fingers-hint-style](#fingers-hint-style) for more details.
 
-( _pressing *aw* would copy `/path/to/foo/bar/lol`_ )
+## @fingers-selected-hint-style
 
-While in **[fingers]** mode you can press <kbd>SPACE</kbd> to toggle compact mode on/off.
+`default: "fg=blue,bold"`
 
-Compact mode is preferred because it preserves the length of lines and doesn't
-cause line wraps, making it easier to follow.
+Format for hints in selected matches in multimode.
 
-However for small hints this can be troublesome: a path as small as `/a/b`
-would have half of its original content concealed. If that's the case you can
-quickly toggle off compact mode by pressing <kbd>SPACE</kbd>.
+## @fingers-selected-highlight-style
+
+`default: "fg=blue"`
+
+Format for selected matches in multimode.
 
 ## @fingers-hint-position
 
@@ -221,64 +230,6 @@ quickly toggle off compact mode by pressing <kbd>SPACE</kbd>.
 
 Control the position where the hint is rendered. Possible values are `"left"`
 and `"right"`.
-
-## @fingers-hint-position-nocompact
-
-`default: "right"`
-
-Same as above, used when `@fingers-compact-hints` is set to `0`.
-
-## @fingers-hint-format
-
-`default: "#[fg=yellow,bold]%s"`
-
-You can customize the colors using the same syntax used in `.tmux.conf` for
-styling the status bar. You'll need to include the `%s` placeholder in your
-custom format, that's where the content will be rendered.
-
-Check all supported features [here](https://github.com/morantron/tmux-printer).
-
-## @fingers-hint-format-nocompact
-
-`default: "#[fg=yellow,bold][%s]"`
-
-Same as above, used when `@fingers-compact-hints` is set to `0`.
-
-## @fingers-highlight-format
-
-`default: "#[fg=yellow,nobold,dim]%s"`
-
-Custom format for the highlighted match. See [@fingers-hint-format](#fingers-hint-format) for more details.
-
-## @fingers-highlight-format-nocompact
-
-`default: "#[fg=yellow,nobold,dim]%s"`
-
-Same as above, used when `@fingers-compact-hints` is set to `0`.
-
-## @fingers-selected-hint-format
-
-`default: "#[fg=green,green]%s"`
-
-Format for hints in selected matches in multimode.
-
-## @fingers-selected-hint-format-nocompact
-
-`default: "#[fg=green,bold][%s]"`
-
-Same as above, used when `@fingers-compact-hints` is set to `0`.
-
-## @fingers-selected-highlight-format
-
-`default: "#[fg=green,nobold,dim]%s"`
-
-Format for selected matches in multimode.
-
-## @fingers-selected-hint-format-nocompact
-
-`default: "#[fg=green,nobold,dim][%s]"`
-
-Same as above, used when `@fingers-compact-hints` is set to `0`.
 
 ## @fingers-keyboard-layout
 
@@ -307,13 +258,135 @@ Hints are generated taking optimal finger movement into account. You can choose 
   * `dvorak-right-hand`
   * `dvorak-homerow`
 
-# Troubleshooting
+## @fingers-show-copied-notification
 
-If you encounter any problems you can run the following command to automatically detect common problems:
+`default: 0`
 
-` $ /path/to/tmux-fingers/scripts/health-check.sh`
+Show a message using `tmux display-message` notifying about the copied result.
 
-More info in [health-check.md](./docs/health-check.md)
+## @fingers-enabled-builtin-patterns
+
+`default: all`
+
+A list of comma separated pattern names. Built-in patterns are the following:
+
+| Name              | Description                                               | Example                                        |
+| ----------------- | --------------------------------------------------------- | ---------------------------------------------- |
+| ip                | ipv4 addresses                                            | `192.168.0.1`                                  |
+| uuid              | uuid identifier                                           | `f1b43afb-773c-4da2-9ae5-fef1aa6945ce`         |
+| sha               | sha identifier                                            | `c8b911e2c7e9a6cc57143eaa12cad57c1f0d69df`     |
+| digit             | four or more digits                                       | `1337`                                         |
+| url               | urls (supported protocols: http/https/git/ssh/file)       | `https://asdf.com`                             |
+| path              | file paths                                                | `path/to/file`                                 |
+| hex               | hexidecimal numbers                                       | `0x00FF`                                       |
+| kubernetes        | kubernetes identifier                                     | `deployment.apps/zookeeper`                    |
+| git-status        | will match file paths in the output of git status         | `modified: ./path/to/file`                     |
+| git-status-branch | will match branch name in the output of git status        | `Your branch is up to date withname-of-branch` |
+| diff              | will match paths in diff output                           | `+++ a/path/to/file`                           |
+
+## @fingers-use-system-clipboard
+
+`default: 1`
+
+Whether to use the system clipboard when copying matches. If set to `0`,
+tmux-fingers will only copy matches to the tmux buffer.
+
+## @fingers-enable-bindings
+
+`default: 1`
+
+By default, tmux-fingers will bind to `prefix` + `@fingers-key` and `prefix` +
+`@fingers-jump-key`. You can opt-out of these bindings in case they clash with
+other parts of your configuration.
+
+Check [recipes](#Recipes) for alternative ways to set up bindings.
+
+## @fingers-cli
+
+You can set up key bindings directly to invoke tmux-fingers by using a special global option `@fingers-cli` exposed by the plugin.
+
+The following options are available:
+
+```
+Usage:
+        tmux-fingers start <arguments> [options]
+
+Arguments:
+        pane_id    pane id (also accepts tmux target-pane tokens specified in tmux man pages) (required)
+
+Options:
+        --mode              can be "jump" or "default" (default: default)
+        --patterns          comma separated list of pattern names
+        --main-action       command to which the output will be piped
+        --ctrl-action       command to which the output will be piped when holding CTRL key
+        --alt-action        command to which the output will be piped when holding ALT key
+        --shift-action      command to which the output will be pipedwhen holding SHIFT key
+        -h, --help          prints help
+```
+
+Check some examples in the [Recipes](#Recipes) section below.
+
+
+# Recipes
+
+## Start tmux-fingers without prefix
+
+You can start tmux-fingers without having to press tmux prefix by adding bindings like this:
+
+```tmux
+# tmux.conf
+
+# Start tmux fingers by pressing Alt+F
+bind -n M-f run -b "#{@fingers-cli} start #{pane_id}"
+
+# Start tmux fingers in jump mode by pressing Alt+J
+bind -n M-j run -b "#{@fingers-cli} start #{pane_id} --mode jump"
+
+```
+
+## Using only specific patterns
+
+You can start tmux-fingers with an specific set of built-in or custom patterns.
+
+```tmux
+# match urls with prefix + u
+bind u run -b "#{@fingers-cli} start #{pane_id} --patterns url"
+
+# match hashes with prefix + h
+bind h run -b "#{@fingers-cli} start #{pane_id} --patterns sha"
+
+# match git stuff with prefix + g
+bind g run -b "#{@fingers-cli} start #{pane_id} --patterns git-status,git-status-branch"
+
+# match custom pattern with prefix + y
+set -g @fingers-pattern-yolo "yolo.*"
+bind y run -b "#{@fingers-cli} start #{pane_id} --patterns yolo"
+```
+
+## Using arbitrary commands
+
+You can use tmux-fingers with any arbitrary command.
+
+```tmux
+# edit file using nvim in a new tmux window with prefix + e
+bind e run -b "#{@fingers-cli} start #{pane_id} --patterns path --main-action 'xargs tmux new-window nvim'"
+```
+
+## Target adjacent panes
+
+You can use tmux target-pane tokens to target adjacent panes. This
+configuration uses vim-style <kbd>ALT</kbd>+<kbd>hjkl</kbd> keys to
+directionally adjacent panes.
+
+Also uses <kbd>ALT</kbd>+<kbd>o</kbd> to target the last pane.
+
+```tmux
+bind -n M-h run -b "#{@fingers-cli} start {left-of}"
+bind -n M-j run -b "#{@fingers-cli} start {down-of}"
+bind -n M-k run -b "#{@fingers-cli} start {up-of}"
+bind -n M-l run -b "#{@fingers-cli} start {right-of}"
+bind -n M-o run -b "#{@fingers-cli} start {last}"
+```
 
 # Acknowledgements and inspiration
 

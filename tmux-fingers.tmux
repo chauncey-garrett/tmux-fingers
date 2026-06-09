@@ -1,26 +1,43 @@
 #!/usr/bin/env bash
 
-THIS_CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-tmux run -b "bash --norc --noprofile $THIS_CURRENT_DIR/scripts/config.sh"
-
-source "$THIS_CURRENT_DIR/scripts/utils.sh"
-
-DEFAULT_FINGERS_KEY="F"
-FINGERS_KEY=$(tmux show-option -gqv @fingers-key)
-FINGERS_KEY=${FINGERS_KEY:-$DEFAULT_FINGERS_KEY}
-
-TMUX_VERSION=$(get_tmux_version)
-
-input_method=""
-if [[ $(version_compare_ge "$(get_tmux_version)" "2.8") == "1" ]]
-then
-  input_method="fingers-mode"
-  tmux run -b "bash $THIS_CURRENT_DIR/scripts/setup-fingers-mode-bindings.sh"
-else
-  input_method="legacy"
+if command -v "tmux-fingers" &>/dev/null; then
+  FINGERS_BINARY="tmux-fingers"
+elif [[ -f "$CURRENT_DIR/bin/tmux-fingers" ]]; then
+  FINGERS_BINARY="$CURRENT_DIR/bin/tmux-fingers"
 fi
 
-tmux bind-key $FINGERS_KEY run-shell "$THIS_CURRENT_DIR/scripts/tmux-fingers.sh '$input_method'"
+if [[ -z "$FINGERS_BINARY" ]]; then
+  tmux run-shell -b "bash $CURRENT_DIR/install-wizard.sh"
+  exit 0
+fi
 
-mkdir -p $THIS_CURRENT_DIR/.cache
+CURRENT_FINGERS_VERSION="$($FINGERS_BINARY version)"
+
+pushd $CURRENT_DIR &> /dev/null
+CURRENT_GIT_VERSION=$(cat shard.yml | grep "^version" | cut -f2 -d':' | sed "s/ //g")
+popd &> /dev/null
+
+SKIP_WIZARD=$(tmux show-option -gqv @fingers-skip-wizard)
+SKIP_WIZARD=${SKIP_WIZARD:-0}
+
+if [ "$SKIP_WIZARD" = "0" ] && [ "$CURRENT_FINGERS_VERSION" != "$CURRENT_GIT_VERSION" ]; then
+  tmux run-shell -b "FINGERS_UPDATE=1 bash $CURRENT_DIR/install-wizard.sh"
+
+  if [[ "$?" != "0" ]]; then
+    echo "Something went wrong while updating tmux-fingers. Please try again."
+    exit 1
+  fi
+fi
+
+if [[ "$TERM" == "dumb" ]]; then
+  # force term value to get proper colors in systemd and tmux 3.6a
+  # https://github.com/Morantron/tmux-fingers/issues/143
+  FINGERS_TERM=$(tmux show-option -gqv default-terminal)
+else
+  FINGERS_TERM="$TERM"
+fi
+
+tmux run "TERM=$FINGERS_TERM $FINGERS_BINARY load-config"
+exit $?

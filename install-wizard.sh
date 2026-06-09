@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+
+CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PLATFORM=$(uname -s)
+action=$1
+
+# set up exit trap
+function finish {
+  exit_code=$?
+
+  # only intercept exit code when there is an action defined (download, or
+  # build from source), otherwise we'll enter an infinte loop of sourcing
+  # tmux.conf
+  if [[ -z "$action" ]]; then
+    exit $exit_code
+  fi
+
+  if [[ $exit_code -eq 0 ]]; then
+    echo "Reloading tmux.conf"
+    tmux source ~/.tmux.conf
+    exit 0
+  else
+    echo "Something went wrong. Please any key to close this window"
+    read -n 1
+    exit 1
+  fi
+}
+
+trap finish EXIT
+
+function install_from_source() {
+  echo "Installing from source..."
+
+  # check if crystal is installed
+  if ! command -v crystal >/dev/null 2>&1; then
+    echo "crystal is not installed. Please install it first."
+    echo ""
+    echo "  https://crystal-lang.org/install/"
+    echo ""
+    exit 1
+  fi
+
+  # check if shards is installed
+  if ! command -v shards >/dev/null 2>&1; then
+    echo "shards is not installed. Please install it first."
+    echo ""
+    echo "  https://crystal-lang.org/reference/latest/man/shards/index.html"
+    echo ""
+    exit 1
+  fi
+
+  pushd $CURRENT_DIR > /dev/null
+    WIZARD_INSTALLATION_METHOD=build-from-source shards build --production
+  popd > /dev/null
+
+  echo "Build complete!"
+  exit 0
+}
+
+function install_with_brew() {
+  echo "Installing with brew..."
+  brew tap morantron/tmux-fingers
+  brew install tmux-fingers
+
+  echo "Installation complete!"
+  exit 0
+}
+
+
+function asset_suffix() {
+  local arch=$(uname -m)
+
+  if [[ "$PLATFORM" == "Linux" && "$arch" == "x86_64" ]]; then
+    echo "linux-x86_64"
+  elif [[ "$PLATFORM" == "Darwin" && "$arch" == "arm64" ]]; then
+    echo "macos-arm64"
+  fi
+}
+
+function download_binary() {
+  local suffix=$(asset_suffix)
+
+  if [[ -z "$suffix" ]]; then
+    echo "No pre-built binary available for your platform ($(uname -s) $(uname -m))."
+    exit 1
+  fi
+
+  mkdir -p $CURRENT_DIR/bin
+
+  echo "Getting latest release..."
+
+  url=$(curl -s "https://api.github.com/repos/Morantron/tmux-fingers/releases" | grep -o "https://.*${suffix}" | head -1)
+
+  if [[ -z "$url" ]]; then
+    echo "Could not find a release for tmux-fingers. Please try again later."
+    exit 1
+  fi
+
+  echo "Downloading binary from $url"
+
+  curl -L $url -o $CURRENT_DIR/bin/tmux-fingers
+  chmod a+x $CURRENT_DIR/bin/tmux-fingers
+
+  echo "Download complete!"
+  exit 0
+}
+
+if [[ "$1" == "download-binary" ]]; then
+  download_binary
+fi
+
+if [[ "$1" == "install-with-brew" ]]; then
+  echo "Installing with brew..."
+  install_with_brew
+  exit 1
+fi
+
+if [[ "$1" == "install-from-source" ]]; then
+  install_from_source
+fi
+
+function get_message() {
+  if [[ "$FINGERS_UPDATE" == "1" ]]; then
+    echo "It looks like tmux-fingers has been updated. We need to rebuild the binary."
+  else
+   echo "It looks like it is the first time you are running the plugin. We first need to get tmux-fingers binary for things to work."
+  fi
+}
+
+menu_args=(
+  -T "tmux-fingers"
+  ""
+  "- " "" ""
+  "-  #[nodim,bold]Welcome to tmux-fingers! ✌️ " "" ""
+  "- " "" ""
+  "-  $(get_message) " "" ""
+  "- " "" ""
+  ""
+)
+
+if [[ -n "$(asset_suffix)" ]]; then
+  menu_args+=("Download binary" b "new-window \"$CURRENT_DIR/install-wizard.sh download-binary\"")
+fi
+
+if [[ "$PLATFORM" == "Darwin" ]]; then
+  menu_args+=("Install with brew" w "new-window \"$CURRENT_DIR/install-wizard.sh install-with-brew\"")
+fi
+
+menu_args+=(
+  "Build from source (crystal required)" s "new-window \"$CURRENT_DIR/install-wizard.sh install-from-source\""
+  ""
+  "Exit" q ""
+)
+
+tmux display-menu "${menu_args[@]}"
